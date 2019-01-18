@@ -54,4 +54,10 @@ public class index {
         }catch (Exception e){
         }
     }
+
+    //首页
+    @RequestMapping("index")
+    public String index(){
+        return "index";
+    }
 }
