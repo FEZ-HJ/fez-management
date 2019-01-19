@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.fez.activiti.controller;
+package com.fez.activiti.controller.model;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

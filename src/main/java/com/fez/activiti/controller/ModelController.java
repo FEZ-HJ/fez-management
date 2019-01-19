@@ -16,7 +16,6 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
@@ -37,9 +36,9 @@ public class ModelController {
     @Autowired
     private RepositoryService repositoryService;
 
-    Gson gson = new Gson();
+    private Gson gson = new Gson();
 
-    @RequestMapping("create")
+    @PostMapping("create")
     public String createModel(String modelName,String modelKey,String description){
         try{
             ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
@@ -69,6 +68,7 @@ public class ModelController {
 //            response.sendRedirect(request.getContextPath() + "/modeler.html?modelId=" + modelData.getId());
             return gson.toJson(modelData.getId());
         }catch (Exception e){
+            e.printStackTrace();
             return gson.toJson(ReturnJson.ERROR());
         }
     }
@@ -87,7 +87,7 @@ public class ModelController {
      * 删除模型
      * @param modelId modelID
      */
-    @RequestMapping("delete")
+    @DeleteMapping("delete")
     public String delete(String modelId){
         try{
             String modelIds[] = modelId.split(",");
@@ -107,8 +107,9 @@ public class ModelController {
      * 获取model的XML
      * @param modelId modelID
      */
-    @RequestMapping("getBpmnXML")
-    public String getBpmnXML(String modelId, org.springframework.ui.Model modelview){
+    @GetMapping("getBpmnXML")
+    public Map<String,String> getBpmnXML(String modelId, org.springframework.ui.Model modelview){
+        Map<String,String> map = new HashMap<>();
         try{
             Model model = repositoryService.getModel(modelId);
             byte[] modelEditorSource = repositoryService.getModelEditorSource(model.getId());
@@ -123,16 +124,14 @@ public class ModelController {
 
             String XML =  new String(exportBytes,"UTF-8");
 
-            modelview.addAttribute("xml",XML);
-            modelview.addAttribute("modelId",modelId);
-            modelview.addAttribute("name",model.getName());
-            return XML;
+            map.put("xml",XML);
+            map.put("modelId",modelId);
         }catch (Exception e){
             e.printStackTrace();
-            modelview.addAttribute("xml","获取数据失败！");
-            modelview.addAttribute("modelId","error");
+            map.put("xml","获取数据失败！");
+            map.put("modelId","error");
         }
-        return "";
+        return map;
     }
 
     /**
@@ -141,10 +140,10 @@ public class ModelController {
      * @param bpmnXML XML
      * @return
      */
-    @RequestMapping("saveModelXML")
+    @PostMapping("saveModelXML")
     public String saveModelXML(String modelId,String bpmnXML){
         try {
-            String unescapeHtml = StringEscapeUtils.unescapeHtml4(bpmnXML);
+            String unescapeHtml = StringUtils.trim(StringEscapeUtils.unescapeHtml4(bpmnXML));
             InputStream in_nocode = new ByteArrayInputStream(unescapeHtml.getBytes("UTF-8"));
             XMLInputFactory xmlFactory  = XMLInputFactory.newInstance();
             XMLStreamReader reader = xmlFactory.createXMLStreamReader(in_nocode);
@@ -159,10 +158,12 @@ public class ModelController {
 
             System.out.println(new String(modelEditorSource,"UTF-8"));
             repositoryService.addModelEditorSource(modelId, modelEditorSource);
-            return gson.toJson("保存成功！");
+            return gson.toJson(ReturnJson.SUCCESS());
         } catch (Exception e) {
             e.printStackTrace();
-            return gson.toJson("保存失败！");
+            return gson.toJson(ReturnJson.ERROR());
         }
     }
+
+
 }
